@@ -4,12 +4,15 @@ import (
 	"github.com/cyfdecyf/bufio"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 )
 
 type DomainList struct {
 	Domain map[string]DomainType
+
+	Reject, Direct, Proxy []*regexp.Regexp
 	sync.RWMutex
 }
 
@@ -24,21 +27,49 @@ const (
 
 func newDomainList() *DomainList {
 	return &DomainList{
-		Domain: map[string]DomainType{},
+		Domain: make(map[string]DomainType),
+		Reject: make([]*regexp.Regexp, 0),
+		Direct: make([]*regexp.Regexp, 0),
+		Proxy:  make([]*regexp.Regexp, 0),
 	}
 }
 
 func (domainList *DomainList) judge(url *URL) (domainType DomainType) {
 	debug.Printf("judging host: %s", url.Host)
-	if domainList.Domain[url.Host] == domainTypeReject || domainList.Domain[url.Domain] == domainTypeReject {
-		debug.Printf("host or domain should reject")
-		return domainTypeReject
-	}
-	if parentProxy.empty() { // no way to retry, so always visit directly
-		return domainTypeDirect
-	}
 	if url.Domain == "" { // simple host or private ip
 		return domainTypeDirect
+	}
+	hostString := strings.ToLower(url.Host)
+	for _, regex := range domainList.Reject {
+		if regex == nil {
+			break
+		}
+		if regex.MatchString(hostString) {
+			debug.Printf("host should be rejected")
+			return domainTypeReject
+		}
+	}
+	if parentProxy.empty() { // no way to retry, so always visit directly
+		errl.Println("Parent proxy not configured! Bypassing request.")
+		return domainTypeDirect
+	}
+	for _, regex := range domainList.Direct {
+		if regex == nil {
+			break
+		}
+		if regex.MatchString(hostString) {
+			debug.Printf("host should bypass")
+			return domainTypeDirect
+		}
+	}
+	for _, regex := range domainList.Proxy {
+		if regex == nil {
+			break
+		}
+		if regex.MatchString(hostString) {
+			debug.Printf("host should use proxy")
+			return domainTypeProxy
+		}
 	}
 	if domainList.Domain[url.Host] == domainTypeDirect || domainList.Domain[url.Domain] == domainTypeDirect {
 		debug.Printf("host or domain should direct")
@@ -117,8 +148,19 @@ func initDomainList(domainListFile string, domainType DomainType) {
 		if domain == "" {
 			continue
 		}
+		domainRegex, err := regexp.Compile(domain)
+		if err != nil {
+			errl.Printf("Invalid regexp %s", domain)
+		}
 		debug.Printf("Loaded domain %s as type %v", domain, domainType)
-		domainList.Domain[domain] = domainType
+		switch domainType {
+		case domainTypeProxy:
+			domainList.Proxy = append(domainList.Proxy, domainRegex)
+		case domainTypeDirect:
+			domainList.Direct = append(domainList.Direct, domainRegex)
+		case domainTypeReject:
+			domainList.Reject = append(domainList.Reject, domainRegex)
+		}
 	}
 	if scanner.Err() != nil {
 		errl.Printf("Error reading domain list %s: %v\n", domainListFile, scanner.Err())
