@@ -1,7 +1,5 @@
 google.com
-www.google.com.hk
-www.google.com.sg
-www.google.co.jp
+/.*google.*/
 youtube.com
 twitter.com
 /.*twimg.com/

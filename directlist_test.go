@@ -31,15 +31,7 @@ func Testjudge(t *testing.T) {
 
 }
 
-var testUrl = map[string]DomainType{
-	"www.google.com":    domainTypeProxy,
-	"www.youtube.com":   domainTypeProxy,
-	"www.twitter.com":   domainTypeProxy,
-	"www.google.com.sg": domainTypeProxy,
-	"i.ytimg.com":       domainTypeProxy,
-	"www.baidu.com":     domainTypeDirect,
-	"weibo.com":         domainTypeDirect,
-}
+var url = "www.baidu.com"
 
 func BenchmarkRegexp(b *testing.B) {
 	list := newDomainList()
@@ -47,9 +39,7 @@ func BenchmarkRegexp(b *testing.B) {
 	list.initDomainList("testdata/proxy_test", domainTypeProxy)
 
 	for i := 0; i < b.N; i++ {
-		for url, _ := range testUrl {
-			list.regexJudge(url)
-		}
+		list.regexJudge(url)
 	}
 }
 
@@ -59,9 +49,7 @@ func BenchmarkGoMap(b *testing.B) {
 	list.initDomainList("testdata/proxy_test", domainTypeProxy)
 
 	for i := 0; i < b.N; i++ {
-		for url, _ := range testUrl {
-			list.oldJudge(url)
-		}
+		list.oldJudge(url)
 	}
 }
 
@@ -71,17 +59,15 @@ func (domainList *DomainList) oldJudge(url string) (domainType DomainType) {
 		debug.Printf("host or domain should reject")
 		return domainTypeReject
 	}
-	if parentProxy.empty() { // no way to retry, so always visit directly
-		return domainTypeDirect
-	}
 	if url == "" { // simple host or private ip
 		return domainTypeDirect
 	}
-	if domainList.Domain[url] == domainTypeDirect {
+	router := domainList.Domain[url]
+	if router == domainTypeDirect {
 		debug.Printf("host or domain should direct")
 		return domainTypeDirect
 	}
-	if domainList.Domain[url] == domainTypeProxy {
+	if router == domainTypeProxy {
 		debug.Printf("host or domain should using proxy")
 		return domainTypeProxy
 	}
@@ -104,10 +90,6 @@ func (domainList *DomainList) regexJudge(url string) (domainType DomainType) {
 			return domainTypeReject
 		}
 	}
-	if parentProxy.empty() { // no way to retry, so always visit directly
-		errl.Println("Parent proxy not configured! Bypassing request.")
-		return domainTypeDirect
-	}
 	for _, regex := range domainList.Direct {
 		if regex == nil {
 			break
@@ -126,11 +108,12 @@ func (domainList *DomainList) regexJudge(url string) (domainType DomainType) {
 			return domainTypeProxy
 		}
 	}
-	if domainList.Domain[url] == domainTypeDirect {
+	router := domainList.Domain[url]
+	if router == domainTypeDirect {
 		debug.Printf("host or domain should direct")
 		return domainTypeDirect
 	}
-	if domainList.Domain[url] == domainTypeProxy {
+	if router == domainTypeProxy {
 		debug.Printf("host or domain should using proxy")
 		return domainTypeProxy
 	}

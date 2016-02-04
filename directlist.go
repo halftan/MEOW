@@ -29,9 +29,9 @@ const (
 func newDomainList() *DomainList {
 	return &DomainList{
 		Domain: make(map[string]DomainType),
-		Reject: make([]*regexp.Regexp, 0),
-		Direct: make([]*regexp.Regexp, 0),
-		Proxy:  make([]*regexp.Regexp, 0),
+		Reject: make([]*regexp.Regexp, 0, 10),
+		Direct: make([]*regexp.Regexp, 0, 100),
+		Proxy:  make([]*regexp.Regexp, 0, 100),
 	}
 }
 
@@ -152,7 +152,7 @@ func (domainList *DomainList) initDomainList(domainListFile string, domainType D
 		if domain[0] == '/' {
 			// Regex domain config
 			domain = strings.Trim(domain, "/")
-			domainRegex, err := regexp.Compile(domain)
+			domainRegex, err := regexp.CompilePOSIX(domain)
 			if err != nil {
 				errl.Printf("Invalid regexp %s", domain)
 			}
