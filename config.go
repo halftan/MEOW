@@ -109,9 +109,9 @@ func parseCmdLineConfig() *Config {
 		Fatal("fail to get config file:", err)
 	}
 	initConfig(c.RcFile)
-	initDomainList(config.DirectFile, domainTypeDirect)
-	initDomainList(config.ProxyFile, domainTypeProxy)
-	initDomainList(config.RejectFile, domainTypeReject)
+	domainList.initDomainList(config.DirectFile, domainTypeDirect)
+	domainList.initDomainList(config.ProxyFile, domainTypeProxy)
+	domainList.initDomainList(config.RejectFile, domainTypeReject)
 
 	if listenAddr != "" {
 		configParser{}.ParseListen(listenAddr)

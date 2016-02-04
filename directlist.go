@@ -128,7 +128,7 @@ func (domainList *DomainList) GetDomainList() []string {
 
 var domainList = newDomainList()
 
-func initDomainList(domainListFile string, domainType DomainType) {
+func (domainList *DomainList) initDomainList(domainListFile string, domainType DomainType) {
 	var err error
 	if err = isFileExists(domainListFile); err != nil {
 		return
