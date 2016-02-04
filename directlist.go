@@ -1,12 +1,13 @@
 package main
 
 import (
-	"github.com/cyfdecyf/bufio"
 	"net"
 	"os"
 	"regexp"
 	"strings"
 	"sync"
+
+	"github.com/cyfdecyf/bufio"
 )
 
 type DomainList struct {
@@ -148,18 +149,25 @@ func (domainList *DomainList) initDomainList(domainListFile string, domainType D
 		if domain == "" {
 			continue
 		}
-		domainRegex, err := regexp.Compile(domain)
-		if err != nil {
-			errl.Printf("Invalid regexp %s", domain)
-		}
-		debug.Printf("Loaded domain %s as type %v", domain, domainType)
-		switch domainType {
-		case domainTypeProxy:
-			domainList.Proxy = append(domainList.Proxy, domainRegex)
-		case domainTypeDirect:
-			domainList.Direct = append(domainList.Direct, domainRegex)
-		case domainTypeReject:
-			domainList.Reject = append(domainList.Reject, domainRegex)
+		if domain[0] == '/' {
+			// Regex domain config
+			domain = strings.Trim(domain, "/")
+			domainRegex, err := regexp.Compile(domain)
+			if err != nil {
+				errl.Printf("Invalid regexp %s", domain)
+			}
+			switch domainType {
+			case domainTypeProxy:
+				domainList.Proxy = append(domainList.Proxy, domainRegex)
+			case domainTypeDirect:
+				domainList.Direct = append(domainList.Direct, domainRegex)
+			case domainTypeReject:
+				domainList.Reject = append(domainList.Reject, domainRegex)
+			}
+			debug.Printf("Loaded regexp domain %s as type %v", domain, domainType)
+		} else {
+			domainList.Domain[domain] = domainType
+			debug.Printf("Loaded domain %s as type %v", domain, domainType)
 		}
 	}
 	if scanner.Err() != nil {

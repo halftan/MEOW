@@ -1,0 +1,16 @@
+google.com
+www.google.com.hk
+www.google.com.sg
+www.google.co.jp
+youtube.com
+twitter.com
+/.*twimg.com/
+t.co
+facebook.com
+fbcdn.net
+fb.me
+ytimg.com
+gmail.com
+.cloudfront.net
+/s3.*.amazonaws.com/
+.elb.amazonaws.com

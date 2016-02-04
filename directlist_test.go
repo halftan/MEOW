@@ -32,12 +32,13 @@ func Testjudge(t *testing.T) {
 }
 
 var testUrl = map[string]DomainType{
-	"www.google.com":  domainTypeProxy,
-	"www.youtube.com": domainTypeProxy,
-	"www.twitter.com": domainTypeProxy,
-	"i.ytimg.com":     domainTypeProxy,
-	"www.baidu.com":   domainTypeDirect,
-	"weibo.com":       domainTypeDirect,
+	"www.google.com":    domainTypeProxy,
+	"www.youtube.com":   domainTypeProxy,
+	"www.twitter.com":   domainTypeProxy,
+	"www.google.com.sg": domainTypeProxy,
+	"i.ytimg.com":       domainTypeProxy,
+	"www.baidu.com":     domainTypeDirect,
+	"weibo.com":         domainTypeDirect,
 }
 
 func BenchmarkRegexp(b *testing.B) {
@@ -45,10 +46,9 @@ func BenchmarkRegexp(b *testing.B) {
 	list.initDomainList("testdata/direct_test", domainTypeDirect)
 	list.initDomainList("testdata/proxy_test", domainTypeProxy)
 
-	for url, expected := range testUrl {
-		result := list.regexJudge(url)
-		if result != expected {
-			b.Errorf("URL: %s misjudged to %v.\n", url, result)
+	for i := 0; i < b.N; i++ {
+		for url, _ := range testUrl {
+			list.regexJudge(url)
 		}
 	}
 }
@@ -58,10 +58,9 @@ func BenchmarkGoMap(b *testing.B) {
 	list.initDomainList("testdata/direct_test", domainTypeDirect)
 	list.initDomainList("testdata/proxy_test", domainTypeProxy)
 
-	for url, expected := range testUrl {
-		result := list.regexJudge(url)
-		if result != expected {
-			b.Errorf("URL: %s misjudged to %v.\n", url, result)
+	for i := 0; i < b.N; i++ {
+		for url, _ := range testUrl {
+			list.oldJudge(url)
 		}
 	}
 }
